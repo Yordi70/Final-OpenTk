@@ -65,17 +65,27 @@ namespace Grafica_OpenGLControl.Class
         }
         public void Trasladar(float x, float y, float z)
         {
+            Centro_Masa.Sum(x, y, z);   
             foreach (Parte p in this.Partes.Values)
             {
-                p.Trasladar(x, y, z);
+                
+                p.Trasladar();
             }
         }
 
-        public void Rotar(float angle, Punto c)
+        public void Rotar(Punto ejes, float angle, Punto c)
         {
             foreach (Parte p in this.Partes.Values)
             {
-                p.Rotar(angle, c);
+                
+                p.RotarObj(ejes, angle, c);
+            }
+        }
+        public void LimpiarTransform()
+        {
+            foreach (Parte p in this.Partes.Values)
+            {
+                p.LimpiarTransform();
             }
         }
     }

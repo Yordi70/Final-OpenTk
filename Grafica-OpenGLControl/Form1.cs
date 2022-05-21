@@ -80,7 +80,7 @@ namespace Grafica_OpenGLControl
 
         private void OnRenderFrame() {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
+            
             
             escenario.Dibujar();
             this.miglControl.SwapBuffers();
@@ -94,39 +94,42 @@ namespace Grafica_OpenGLControl
            
         }
 
-        private void groupBox1_Enter(object sender, EventArgs e)
+        private void GroupBox1_Enter(object sender, EventArgs e)
         {
 
         }
 
-        private void label1_Click(object sender, EventArgs e)
+        private void Label1_Click(object sender, EventArgs e)
         {
 
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+        private void TextBox1_TextChanged(object sender, EventArgs e)
         {
 
         }
 
-        private void label3_Click(object sender, EventArgs e)
+        private void Label3_Click(object sender, EventArgs e)
         {
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void Button1_Click(object sender, EventArgs e)
         {
-            escenario.LObjetos["Casa5.txt"].Trasladar(0.0f, 0.0f, 0.5f);
-            escenario.LObjetos["Casa5.txt"].Escalar(0.5f, 0.5f, 0.5f);
-            escenario.LObjetos["Casa4.txt"].Escalar(0.5f, 0.5f, 0.5f);
-            //escenario.LObjetos["Casa5.txt"].Rotar(45f, escenario.LObjetos["Casa5.txt"].Centro_Masa);
-            escenario.LObjetos["Casa4.txt"].Rotar(20f, escenario.LObjetos["Casa5.txt"].Centro_Masa);
-            escenario.LObjetos["Casa5.txt"].LPartes["Pfrontal"].Trasladar(0.5f, 0.5f, 0.5f);
-            escenario.LObjetos["Casa5.txt"].LPartes["TIzq"].Trasladar(0.5f, 0.5f, 0.5f);
-            OnRenderFrame();
+            if (escenario.LObjetos.Count != 0)
+            {
+                
+                Dibujar_Check();
+                miglControl.MakeCurrent();
+                OnRenderFrame();
+            }
+            else
+            {
+                MessageBox.Show("Cargue los Datos", "Error");
+            }
         }
 
-        private void ingresarDatosToolStripMenuItem_Click(object sender, EventArgs e)
+        private void IngresarDatosToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog guardar_objeto = new OpenFileDialog
             {
@@ -141,10 +144,18 @@ namespace Grafica_OpenGLControl
                 try
                 {
                     string str_RutaArchivo = guardar_objeto.FileName;
-                    string ruta_final = @"C:\Users\yordi\source\repos\Program-Grafica\Program-Grafica\bin\Debug\net5.0-windows\Objetos\" + guardar_objeto.SafeFileName;
+                    
+                    string ruta_final = @"C:\Users\yordi\source\repos\Grafica-OpenGLControl\Grafica-OpenGLControl\bin\Debug\Objetos\" + guardar_objeto.SafeFileName;
 
                     File.Copy(str_RutaArchivo, ruta_final);
-                    archivos.Add(guardar_objeto.FileName, false);
+                    string fileName = guardar_objeto.SafeFileName;
+                    int fileExtPos = fileName.LastIndexOf(".");
+                    if (fileExtPos >= 0)
+                    {
+                        fileName = fileName.Substring(0, fileExtPos);
+                    }
+
+                    archivos.Add(fileName, false);
 
                 }
                 catch (Exception)
@@ -163,10 +174,17 @@ namespace Grafica_OpenGLControl
                 FileInfo[] files = _directory.GetFiles("*.txt");
                 foreach (FileInfo file in files)
                 {
-                        archivos.Add(file.Name, true);
+                    string fileName = file.Name; 
+                    int fileExtPos = fileName.LastIndexOf("."); 
+                    if (fileExtPos >= 0) {
+                        fileName = fileName.Substring(0, fileExtPos);
+                    }
+
+                        archivos.Add(fileName, true);
                         string jsonString = File.ReadAllText("Objetos/" + file.Name); 
                         Objeto obj = JsonConvert.DeserializeObject<Objeto>(jsonString);
-                        escenario.Add(file.Name, obj);
+                        escenario.Add(fileName, obj);
+                        
                 }
             }
             else
@@ -175,8 +193,9 @@ namespace Grafica_OpenGLControl
                 {
                     if (!archivos.Cargado(archivo.Key,"cargado"))
                     {
-                        string jsonString = File.ReadAllText("Objetos/" + archivo.Key);
+                        string jsonString = File.ReadAllText("Objetos/" + archivo.Key +".txt");
                         Objeto obj = JsonConvert.DeserializeObject<Objeto>(jsonString);
+                        
                         escenario.Add(archivo.Key, obj);
                         archivos.Cargar(archivo.Key, "cargado");
                     }
@@ -184,9 +203,192 @@ namespace Grafica_OpenGLControl
             }
         }
 
-        private void cargarDatosToolStripMenuItem_Click(object sender, EventArgs e)
+        public void CargarTreeView()
+        {
+            treeView1.Nodes.Clear();
+            if (treeView1.Nodes.Count == 0) { 
+                int index = 0;
+                foreach (var o in archivos.F_archivos)
+                {
+                    treeView1.Nodes.Add(o.Key);
+
+                    foreach (var tree in escenario.LObjetos[o.Key].LPartes)
+                    {
+                        treeView1.Nodes[index].Nodes.Add(tree.Key);
+
+                    }
+                    index++;
+                }
+            }
+
+        }
+        private void CargarDatosToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CargarDatos();
+            CargarTreeView();
         }
+
+        private void TreeView1_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+
+        }
+        private void TreeView1_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            if (e.Node.Checked == true && e.Node.Parent == null)
+            {
+                foreach (TreeNode tree in e.Node.Nodes)
+                {
+                    tree.Checked = true;
+                }
+            }
+            else
+            {
+                foreach (TreeNode tree in e.Node.Nodes)
+                {
+                    tree.Checked = false;
+                }
+            }
+           
+
+        }
+        public void Dibujar_Check()
+        {
+            int index = 0;
+            foreach (TreeNode raiz in treeView1.Nodes)
+            {
+                
+                    foreach (TreeNode hijo in treeView1.Nodes[index].Nodes)
+                    {
+                        if (hijo.Checked)
+                        {
+                            escenario.GetElemento(raiz.Text).GetElemento(hijo.Text).P_Visible = true;
+                        }
+                        else {
+                            escenario.GetElemento(raiz.Text).GetElemento(hijo.Text).P_Visible = false;
+                        }
+                    }
+                
+                index++;
+            }
+        }
+        
+
+        
+        private void Button2_Click(object sender, EventArgs e)
+        {
+            Punto ejes = new Punto((float)Rot_X.Value, (float)Rot_Y.Value, (float)Rot_Z.Value);
+            
+
+            int index = 0;
+            foreach (TreeNode raiz in treeView1.Nodes)
+            {
+                if (raiz.Checked)
+                {
+                    
+                    escenario.GetElemento(raiz.Text).Rotar(ejes,15f, escenario.GetElemento(raiz.Text).Centro_Masa);
+                    
+                    OnRenderFrame();
+
+                }
+                else
+                {
+                    foreach (TreeNode hijo in treeView1.Nodes[index].Nodes)
+                    {
+                        if (hijo.Checked)
+                        {
+                            escenario.GetElemento(raiz.Text).GetElemento(hijo.Text).Rotar(ejes, 15f, escenario.GetElemento(raiz.Text).Centro_Masa);
+                            OnRenderFrame();
+                            
+                        }
+                    }
+                }
+
+                index++;
+            }
+        }
+
+        private void Button4_Click(object sender, EventArgs e)
+        {
+            float x = (float)Tras_X.Value;
+            float y = (float)Tras_Y.Value;
+            float z = (float)Tras_Z.Value;
+            int index = 0;
+            foreach (TreeNode raiz in treeView1.Nodes)
+            {
+                if (raiz.Checked)
+                {
+                    escenario.GetElemento(raiz.Text).Trasladar(x, y, z);
+                    
+                    OnRenderFrame();
+                }
+                else
+                {
+                    foreach (TreeNode hijo in treeView1.Nodes[index].Nodes)
+                    {
+                        if (hijo.Checked)
+                        {
+                            escenario.GetElemento(raiz.Text).GetElemento(hijo.Text).Trasladar(x, y, z);
+                            
+                            OnRenderFrame();
+                        }
+                    }
+                }
+
+                index++;
+            }
+        }
+
+        private void Button1_Click_1(object sender, EventArgs e)
+        {
+            Tras_X.Value = 0;
+            Tras_Y.Value = 0;
+            Tras_Z.Value = 0;
+            Rot_X.Value = 0;
+            Rot_Y.Value = 0;
+            Rot_Z.Value = 0;
+            Esc_X.Value = 1;
+            Esc_Y.Value = 1;
+            Esc_Z.Value = 1;
+        }
+
+        
+
+        private void Escalar_Click(object sender, EventArgs e)
+        {
+            float x = (float)Esc_X.Value;
+            float y = (float)Esc_Y.Value;
+            float z = (float)Esc_Z.Value;
+            int index = 0;
+            foreach (TreeNode raiz in treeView1.Nodes)
+            {
+                if (raiz.Checked)
+                {
+                    escenario.GetElemento(raiz.Text).Escalar(x, y, z);
+
+                    OnRenderFrame();
+                }
+                else
+                {
+                    foreach (TreeNode hijo in treeView1.Nodes[index].Nodes)
+                    {
+                        if (hijo.Checked)
+                        {
+                            escenario.GetElemento(raiz.Text).GetElemento(hijo.Text).Escalar(x, y, z);
+
+                            OnRenderFrame();
+                        }
+                    }
+                }
+
+                index++;
+            }
+        }
+
+        private void Button3_Click(object sender, EventArgs e)
+        {
+            escenario.LimpiarTransform();
+        }
+
+        
     }
 }

@@ -40,6 +40,12 @@ namespace Grafica_OpenGLControl.Class
             this.EjeY += p.Y;
             this.EjeZ += p.Z;
         }
+        public void Sum(float X, float Y, float Z)
+        {
+            this.EjeX += X;
+            this.EjeY += Y;
+            this.EjeZ += Z;
+        }
 
     }
 }

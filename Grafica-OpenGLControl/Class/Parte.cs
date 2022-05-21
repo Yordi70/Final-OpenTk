@@ -13,6 +13,7 @@ namespace Grafica_OpenGLControl.Class
         private Matrix4 Translate { get; set; }
         private Matrix4 Rotate { get; set; }
         private Shader Shaders { get; set; }
+        private bool Visible { get; set; }
 
         //properties
         public Dictionary<string, Punto> LPuntos { get { return Puntos; } set { Puntos = value; } }
@@ -21,6 +22,7 @@ namespace Grafica_OpenGLControl.Class
         public Matrix4 P_Translate { get { return Translate; } set { Translate = value; } }
         public Matrix4 P_Rotate { get { return Rotate; } set { Rotate = value; } }
         public Shader P_Shaders { get { return Shaders; } set { Shaders = value; } }
+        public bool P_Visible  { get{ return Visible; } set{ Visible = value; } }
 
         public Parte()
         {
@@ -30,6 +32,7 @@ namespace Grafica_OpenGLControl.Class
             this.Scale = Matrix4.CreateScale(1.0f, 1.0f, 1.0f);
             this.Translate = Matrix4.CreateTranslation(0f, 0f, 0f);
             this.Rotate = Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(0f));
+            this.Visible = false;
         }
         public Parte(Parte p)
         {
@@ -86,26 +89,49 @@ namespace Grafica_OpenGLControl.Class
 
         public void Dibujar()
         {
-            Matrix4 transform = Matrix4.Identity * Translate * Rotate * Scale;
+            Matrix4 transform = Matrix4.Identity * Rotate * Scale;
             Shaders.Use();
             Shaders.SetMatrix4("transform", transform);
-
-            GL.BufferData(BufferTarget.ArrayBuffer, this.CantElements() * sizeof(float), this.ToArray(), BufferUsageHint.StaticDraw);
-            GL.DrawArrays(PrimitiveType.LineLoop, 0, this.CantPuntos());
+            if (this.Visible) { 
+                GL.BufferData(BufferTarget.ArrayBuffer, this.CantElements() * sizeof(float), this.ToArray(), BufferUsageHint.StaticDraw);
+                GL.DrawArrays(PrimitiveType.LineLoop, 0, this.CantPuntos());
+            }
 
         }
         public void Escalar(float x, float y, float z)
         {
-            Scale = Matrix4.CreateScale(x, y, z);
+            Scale *= Matrix4.CreateScale(x, y, z);
         }
 
-        public void Trasladar(float x, float y, float z)
+        public void Trasladar(float x, float y, float z) 
         {
-            Translate = Matrix4.CreateTranslation(x, y, z);
+            Centro_Masa.Sum(x, y, z);
+            Rotate *= Matrix4.Identity;
         }
-        public void Rotar(float angle, Punto c)
+        public void Trasladar()
         {
-            Rotate = Matrix4.CreateTranslation(c.X, c.Y, c.Z) * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(angle)) * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(angle)) * Matrix4.CreateRotationZ((float)MathHelper.DegreesToRadians(angle)) * Matrix4.CreateTranslation(-c.X, -c.Y, -c.Z);
+            Rotate *= Matrix4.Identity;
+        }
+        public void Rotar(Punto ejes, float angle, Punto c_m)
+        {
+            Rotate *= Matrix4.CreateTranslation(-Centro_Masa.X, -Centro_Masa.Y, -Centro_Masa.Z) * Matrix4.CreateTranslation(-c_m.X, -c_m.Y, -c_m.Z);
+            Rotate *= Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(ejes.X * angle)) * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(ejes.Y * angle)) * Matrix4.CreateRotationZ((float)MathHelper.DegreesToRadians(ejes.Z * angle)) ;
+            Rotate *= Matrix4.CreateTranslation(c_m.X, c_m.Y, c_m.Z) * Matrix4.CreateTranslation(Centro_Masa.X,Centro_Masa.Y, Centro_Masa.Z);
+
+        }
+        public void RotarObj(Punto ejes, float angle, Punto c_m)
+        {
+            Rotate *=  Matrix4.CreateTranslation(-c_m.X, -c_m.Y, -c_m.Z);
+            Rotate *= Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(ejes.X * angle)) * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(ejes.Y * angle)) * Matrix4.CreateRotationZ((float)MathHelper.DegreesToRadians(ejes.Z * angle));
+            Rotate *= Matrix4.CreateTranslation(c_m.X, c_m.Y, c_m.Z) ;
+
+        }
+
+
+        public void LimpiarTransform()
+        {
+            Rotate = Scale = Translate = Matrix4.Identity;
+            
         }
     }
 }

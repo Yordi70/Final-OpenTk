@@ -7,6 +7,6 @@ namespace Grafica_OpenGLControl.Interface
         void Dibujar();
         void Escalar(float x, float y, float z);
         void Trasladar(float x, float y, float z);
-        void Rotar(float angle, Punto c);
+        void Rotar(Punto ejes,float angle, Punto c_m);
     }
 }

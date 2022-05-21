@@ -63,11 +63,18 @@ namespace Grafica_OpenGLControl.Class
                 obj.Trasladar(x, y, z);
             }
         }
-        public void Rotar(float angle, Punto c)
+        public void Rotar(Punto ejes, float angle, Punto c)
         {
             foreach (Objeto obj in this.Objetos.Values)
             {
-                obj.Rotar(angle, c);
+                obj.Rotar(ejes, angle, c);
+            }
+        }
+        public void LimpiarTransform()
+        {
+            foreach (Objeto obj in this.Objetos.Values)
+            {
+                obj.LimpiarTransform();
             }
         }
 
